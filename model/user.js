@@ -1,6 +1,6 @@
 const mongoose=require("mongoose")
 
-const DonorSchema=new mongoose.Schema(
+const UserSchema=new mongoose.Schema(
     {
         username:{
             type:String,
@@ -18,15 +18,22 @@ const DonorSchema=new mongoose.Schema(
         },
         role:{
             type:String,
-            default:"patient"
+            default:"patient",
+            enum:["patient", "donor", "admin"]
+        },
+        phone:{
+            type:String,
+            required:true,
+            unique:true
         },
         filepath:{
             type:String,
             default:""
         },
+    
         
     }
 )
 module.exports=mongoose.model(
-    "Donor", DonorSchema
+    "User", UserSchema
 )
