@@ -1,8 +1,8 @@
-const Donor=require("../model/user")
+const User=require("../model/user")
 exports.registerUser=async(req, res)=>{
     const {username, email, password, phone}=req.body
     try{
-        const exisitngUser=await Donor.findOne(
+        const exisitngUser=await User.findOne(
             {
                 $or:[{username:username}, {email:email}]
             }
