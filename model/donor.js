@@ -27,3 +27,6 @@ const DonorSchema=new mongoose.Schema(
         
     }
 )
+module.exports=mongoose.model(
+    "Donor", DonorSchema
+)
