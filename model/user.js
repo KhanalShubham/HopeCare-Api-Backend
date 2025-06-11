@@ -14,17 +14,11 @@ const UserSchema=new mongoose.Schema(
         password:{
             type:String,
             required: true,
-            unique:true
         },
         role:{
             type:String,
             default:"patient",
             enum:["patient", "donor", "admin"]
-        },
-        phone:{
-            type:String,
-            required:true,
-            unique:true
         },
         filepath:{
             type:String,
