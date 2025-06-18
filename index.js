@@ -1,26 +1,38 @@
-require('dotenv').config();
 const express = require('express');
+require('dotenv').config();
 const connectDB = require('./config/db');
-const userRoute=require('./routes/userRoute');
+const userRoute = require('./routes/userRoute');
+const adminRoute = require("./routes/admin/adminRoutes");
+const cors = require('cors');
+
 const app = express();
-const cors = require('cors');  // to manage request from frontend
-let corsOption={
-    origin:"*",
-}
-app.use(cors(corsOption));
+
+// CORS configuration
+let corsOptions = {
+    origin: "*"
+};
+app.use(cors(corsOptions));
+
+// Connect to MongoDB
 connectDB();
+
+// Middleware
 app.use(express.json());
+
+// Routes
 app.use("/api/auth", userRoute);
+app.use("/api/admin", adminRoute);
 
-// app.get('/', (req, res) => {
-//      return res.status(200).json({
-//         message: "Server is running",
-//         success: true
-//     });
-// });
+// Optional base route
+app.get('/', (req, res) => {
+    return res.status(200).json({
+        message: "Server is running",
+        success: true
+    });
+});
+
+// Server listen
 const PORT = process.env.PORT || 5050;
-
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`
-    );
+    console.log(`Server is running on port ${PORT}`);
 });

@@ -65,15 +65,21 @@ exports.loginUser = async (req, res) => {
             "_id": getUser._id,
             "email": getUser.email,
             "username": getUser.username,
-            "password": getUser.password,
+            "role":getUser.role
         }
         const token = jwt.sign(payload, process.env.SECRET, { expiresIn: '7d' })
         return res.status(200).json(
             {
                 "success": true,
                 "message": "Login successfull",
-                "data": getUser,
-                "token": token
+                "data": {
+                    "_id": getUser._id,
+                    "email": getUser.email,
+                    "username": getUser.username,
+                    "role": getUser.role,
+                    "filepath": getUser.filepath
+                },
+                "token": token,
 
             }
         )

@@ -17,7 +17,7 @@ const UserSchema=new mongoose.Schema(
         },
         role:{
             type:String,
-            default:"patient",
+            default:"donor",
             enum:["patient", "donor", "admin"]
         },
         filepath:{
