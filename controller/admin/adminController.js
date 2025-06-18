@@ -87,7 +87,8 @@ exports.createUser=async(req, res)=>{
     }
 }
 // 4. delete
-exports.deleteOneUser = async (req, res) => {
+exports.deleteUser = async (req, res) => {
+    const userId=req.params.id
     try{
         const _id = req.params.id
         const user = await User.deleteOne(
