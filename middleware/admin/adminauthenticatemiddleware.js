@@ -1,10 +1,12 @@
+const dotenv = require('dotenv');
 const jwt = require('jsonwebtoken');
 const User = require('../../model/user');
 
-// General authentication middleware
-exports.authenticateToken = async (req, res, next) => {
+dotenv.config();
+
+const authenticateToken = async (req, res, next) => {
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+    const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
         return res.status(401).json({
@@ -14,8 +16,15 @@ exports.authenticateToken = async (req, res, next) => {
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+        // If admin token (no database user to look for)
+        if (decoded.role === "admin") {
+            req.user = { username: decoded.username, role: "admin" };
+            return next();
+        }
+
+        // Otherwise for normal users
         const user = await User.findById(decoded._id);
         if (!user) {
             return res.status(401).json({
@@ -34,48 +43,42 @@ exports.authenticateToken = async (req, res, next) => {
     }
 };
 
-// Admin-only middleware
-exports.requireAdmin = (req, res, next) => {
-    if (req.user.role !== 'admin') {
-        return res.status(403).json({
-            success: false,
-            message: 'Admin access required'
-        });
-    }
-    next();
+//  Require Admin
+const requireAdmin = (req, res, next) => {
+    if (req.user?.role === 'admin') return next();
+
+    return res.status(403).json({
+        success: false,
+        message: 'Admin access required'
+    });
 };
 
-// Donor-only middleware
-exports.requireDonor = (req, res, next) => {
-    if (req.user.role !== 'donor' && req.user.role !== 'admin') {
-        return res.status(403).json({
-            success: false,
-            message: 'Donor access required'
-        });
+//  Require Donor
+const requireDonor = (req, res, next) => {
+    if (req.user?.role === 'donor' || req.user?.role === 'admin') {
+        return next();
     }
-    next();
+    return res.status(403).json({
+        success: false,
+        message: 'Donor access required'
+    });
 };
 
-// Patient-only middleware
-exports.requirePatient = (req, res, next) => {
-    if (req.user.role !== 'patient' && req.user.role !== 'admin') {
-        return res.status(403).json({
-            success: false,
-            message: 'Patient access required'
-        });
+//  Require Patient
+const requirePatient = (req, res, next) => {
+    if (req.user?.role === 'patient' || req.user?.role === 'admin') {
+        return next();
     }
-    next();
+    return res.status(403).json({
+        success: false,
+        message: 'Patient access required'
+    });
 };
 
-// Multiple role middleware
-exports.requireRoles = (roles) => {
-    return (req, res, next) => {
-        if (!roles.includes(req.user.role)) {
-            return res.status(403).json({
-                success: false,
-                message: 'Insufficient permissions'
-            });
-        }
-        next();
-    };
+
+module.exports = {
+    authenticateToken,
+    requireAdmin,
+    requireDonor,
+    requirePatient
 };

@@ -1,5 +1,5 @@
 const express = require('express');
-const { getAllUsers, getUserById, createUser, updateUser, deleteUser} = require("../../controller/admin/adminController");
+const { getAllUsers, getUserById, createUser, updateUser, deleteUser} = require("../../controller/admin/adminUserController");
 const { authenticateToken, requireAdmin } = require("../../middleware/admin/adminauthenticatemiddleware");
 
 const router = express.Router();
@@ -32,7 +32,7 @@ router.delete(
     deleteUser
 )
 router.put(
-    "user/:id",
+    "/user/:id",
     authenticateToken,
     requireAdmin,
     updateUser

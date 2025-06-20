@@ -2,8 +2,14 @@ const express = require('express');
 require('dotenv').config();
 const connectDB = require('./config/db');
 const userRoute = require('./routes/userRoute');
-const adminRoute = require("./routes/admin/adminRoutes");
+const adminUserRoute = require("./routes/admin/adminUserRoutes");
 const cors = require('cors');
+const patientRoutes = require('./routes/patientRoute');
+const documentRoutes=require("./routes/documentRoute")
+const adminRoute=require("./routes/admin/adminRoute")
+const adminPatientRoute=require("./routes/admin/adminPatientRoutes")
+
+
 
 const app = express();
 
@@ -21,7 +27,11 @@ app.use(express.json());
 
 // Routes
 app.use("/api/auth", userRoute);
-app.use("/api/admin", adminRoute);
+// app.use("/api/admin", adminUserRoute);
+app.use("/api/admin/patient",adminPatientRoute );
+app.use('/api/patients', patientRoutes);
+app.use("/api/document", documentRoutes)
+app.use("/api/auth/admin", adminRoute)
 
 // Optional base route
 app.get('/', (req, res) => {

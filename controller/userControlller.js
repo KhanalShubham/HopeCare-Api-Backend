@@ -21,7 +21,6 @@ exports.registerUser = async (req, res) => {
             username,
             email,
             password: hashedPassword,
-            //haven't used role and filepath here, assuming they are optional
         })
         await newUser.save()
         res.status(201).json({ message: "User registered successfully" })
@@ -64,8 +63,7 @@ exports.loginUser = async (req, res) => {
         const payload = {
             "_id": getUser._id,
             "email": getUser.email,
-            "username": getUser.username,
-            "role":getUser.role
+            "username": getUser.username
         }
         const token = jwt.sign(payload, process.env.SECRET, { expiresIn: '7d' })
         return res.status(200).json(
@@ -76,7 +74,6 @@ exports.loginUser = async (req, res) => {
                     "_id": getUser._id,
                     "email": getUser.email,
                     "username": getUser.username,
-                    "role": getUser.role,
                     "filepath": getUser.filepath
                 },
                 "token": token,
