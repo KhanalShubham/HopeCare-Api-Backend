@@ -103,6 +103,7 @@ exports.updatePatient = async (req, res) => {
 exports.addPatient=async(req, res) =>{
     const { name, disease, description, contact, password } = req.body;
     try {
+        const filepath=req.file?.path
         const existing = await Patient.findOne({ contact:contact });
         if (existing) {
             return res.status(400).json({ success: false, message: "Patient with this contact already exists" });
@@ -115,7 +116,8 @@ exports.addPatient=async(req, res) =>{
             disease,
             description,
             contact,
-            password: hashedPassword // store hashed password
+            password: hashedPassword, // store hashed password
+            filepath: filepath,
         });
 
         await newPatient.save();

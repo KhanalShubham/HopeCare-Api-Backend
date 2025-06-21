@@ -4,10 +4,12 @@ const {
     getAllPatients, getPatientById,
     deletePatient, updatePatient, addPatient
 } = require('../../controller/admin/adminPatientController');
+const upload=require("../../middleware/fileupload");
 
 const { authenticateToken, requireAdmin } = require("../../middleware/admin/adminauthenticatemiddleware");
 
-router.post("/add-patient",authenticateToken,requireAdmin,addPatient);
+router.post("/add-patient",authenticateToken,requireAdmin,upload.single("image"),addPatient);
+
 
 // List all patients
 router.get("/", authenticateToken, requireAdmin, getAllPatients);

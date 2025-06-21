@@ -21,7 +21,9 @@
     "mongoose": "^8.15.1",
     "multer": "^2.0.1",
     "nodemon": "^3.1.10",
-    "uuid": "^11.1.0"
+    "path": "^0.12.7",
+    "uuid": "^11.1.0",
+    "uuidv4": "^6.2.13"
   },
   "repository": {
     "type": "git",

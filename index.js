@@ -8,6 +8,7 @@ const patientRoutes = require('./routes/patientRoute');
 const documentRoutes=require("./routes/documentRoute")
 const adminRoute=require("./routes/admin/adminRoute")
 const adminPatientRoute=require("./routes/admin/adminPatientRoutes")
+const path=require("path")
 
 
 
@@ -24,6 +25,7 @@ connectDB();
 
 // Middleware
 app.use(express.json());
+app.use("/uploads", express.static(path.join(__dirname, "uploads")))
 
 // Routes
 app.use("/api/auth", userRoute);
