@@ -32,6 +32,7 @@ app.use("/api/admin/patient",adminPatientRoute );
 app.use('/api/patients', patientRoutes);
 app.use("/api/document", documentRoutes)
 app.use("/api/auth/admin", adminRoute)
+app.use("/api/admin/user", adminUserRoute)
 
 // Optional base route
 app.get('/', (req, res) => {

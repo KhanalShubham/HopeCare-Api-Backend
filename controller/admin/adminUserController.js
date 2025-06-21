@@ -62,7 +62,7 @@ exports.getUserById = async (req, res) => {
     }
 };
 
-// 3️⃣ Create user
+// 3⃣ Create user
 exports.createUser = async (req, res) => {
     const { username, email, password } = req.body;
 

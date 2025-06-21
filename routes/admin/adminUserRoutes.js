@@ -6,7 +6,7 @@ const router = express.Router();
 
 // Get all users (admin only)
 router.get(
-    "/users",
+    "/",
     authenticateToken,
     requireAdmin,
     getAllUsers
@@ -14,25 +14,25 @@ router.get(
 
 // Get user by ID (admin only)
 router.get(
-    "/users/:id",
+    "/:id",
     authenticateToken,
     requireAdmin,
     getUserById
 );
 router.post(
-    "/users",
+    "/add-user",
     authenticateToken,
     requireAdmin,
     createUser
 )
 router.delete(
-    "/user/:id",
+    "/:id",
     authenticateToken,
     requireAdmin,
     deleteUser
 )
 router.put(
-    "/user/:id",
+    "/:id",
     authenticateToken,
     requireAdmin,
     updateUser
