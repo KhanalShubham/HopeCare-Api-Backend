@@ -66,6 +66,7 @@ exports.loginUser = async (req, res) => {
             "username": getUser.username
         }
         const token = jwt.sign(payload, process.env.SECRET, { expiresIn: '7d' })
+        console.log(getUser.role)
         return res.status(200).json(
             {
                 "success": true,

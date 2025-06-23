@@ -68,14 +68,23 @@ exports.updatePatient = async (req, res) => {
     const { name, disease, description, contact } = req.body;
 
     try {
+        const filepath = req.file?.path;
+
+        const updateData = {
+            name,
+            disease,
+            description,
+            contact,
+        };
+
+        // If a new file was uploaded, add filepath to updateData
+        if (filepath) {
+            updateData.filepath = filepath;
+        }
+
         const updatedPatient = await Patient.findByIdAndUpdate(
             req.params.id,
-            {
-                name,
-                disease,
-                description,
-                contact,
-            },
+            updateData,
             { new: true, runValidators: true }
         );
 
@@ -99,6 +108,7 @@ exports.updatePatient = async (req, res) => {
         });
     }
 };
+
 
 exports.addPatient=async(req, res) =>{
     const { name, disease, description, contact, password } = req.body;

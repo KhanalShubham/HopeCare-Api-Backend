@@ -21,6 +21,6 @@ router.get("/:id", authenticateToken, requireAdmin, getPatientById);
 router.delete("/:id", authenticateToken, requireAdmin, deletePatient);
 
 // Update patient (optional)
-router.put("/:id", authenticateToken, requireAdmin, updatePatient);
+router.put("/:id", authenticateToken, requireAdmin,upload.single("image"), updatePatient);
 
 module.exports = router;

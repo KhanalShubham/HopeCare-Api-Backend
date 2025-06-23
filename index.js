@@ -8,7 +8,9 @@ const patientRoutes = require('./routes/patientRoute');
 const documentRoutes=require("./routes/documentRoute")
 const adminRoute=require("./routes/admin/adminRoute")
 const adminPatientRoute=require("./routes/admin/adminPatientRoutes")
+var bodyParser = require('body-parser')
 const path=require("path")
+
 
 
 
@@ -24,13 +26,15 @@ app.use(cors(corsOptions));
 connectDB();
 
 // Middleware
+app.use(bodyParser.json()); // for JSON data
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")))
 
 // Routes
 app.use("/api/auth", userRoute);
 // app.use("/api/admin", adminUserRoute);
-app.use("/api/admin/patient",adminPatientRoute );
+app.use("/api/admin/patient",adminPatientRoute);
 app.use('/api/patients', patientRoutes);
 app.use("/api/document", documentRoutes)
 app.use("/api/auth/admin", adminRoute)
