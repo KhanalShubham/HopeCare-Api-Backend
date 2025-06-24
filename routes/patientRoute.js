@@ -1,7 +1,8 @@
 const express = require("express")
 const router = express.Router()
 const {createPatient, loginPatient, getApprovedPatients, approvePatient, deletePatient}=require("../controller/patientController");
-const { authenticateToken, requireAdmin } = require("../middleware/admin/adminauthenticatemiddleware");
+// const { authorizeToken, requireAdmin } = require("../middleware/admin/adminauthenticatemiddleware");
+const {authorizeToken,requireAdmin} = require("../middleware/authMiddleware");
 
 // Patient registration (from mobile)
 router.post('/create', createPatient);
@@ -9,14 +10,14 @@ router.post('/create', createPatient);
 router.post("/login", loginPatient )
 
 // Donor: see all approved patients
-router.get('/approved', authenticateToken, getApprovedPatients);
+router.get('/approved', authorizeToken, getApprovedPatients);
 
-// router.getAll("/", authenticateToken, )
+// router.getAll("/", authorizeToken, )
 
 // Admin: approve patient
-router.put('/:id/approve', authenticateToken, requireAdmin, approvePatient);
+router.put('/:id/approve', authorizeToken, requireAdmin, approvePatient);
 
 // Admin: delete patient
-router.delete('/:id', authenticateToken, requireAdmin, deletePatient);
+router.delete('/:id', authorizeToken, requireAdmin, deletePatient);
 
 module.exports=router

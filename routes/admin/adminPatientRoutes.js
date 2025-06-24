@@ -6,21 +6,23 @@ const {
 } = require('../../controller/admin/adminPatientController');
 const upload=require("../../middleware/fileupload");
 
-const { authenticateToken, requireAdmin } = require("../../middleware/admin/adminauthenticatemiddleware");
+// const { authenticateToken, requireAdmin } = require("../../middleware/admin/adminauthenticatemiddleware");
+const {authorizeToken,requireAdmin} = require("../../middleware/authMiddleware");
 
-router.post("/add-patient",authenticateToken,requireAdmin,upload.single("image"),addPatient);
+router.post("/add-patient",authorizeToken,requireAdmin,upload.single("image"),addPatient);
 
 
 // List all patients
-router.get("/", authenticateToken, requireAdmin, getAllPatients);
+router.get("/", authorizeToken, requireAdmin, getAllPatients);
 
 // Get patient by ID
-router.get("/:id", authenticateToken, requireAdmin, getPatientById);
+router.get("/:id", authorizeToken, requireAdmin, getPatientById);
 
 // Delete patient
-router.delete("/:id", authenticateToken, requireAdmin, deletePatient);
+router.delete("/:id", authorizeToken, requireAdmin, deletePatient);
 
 // Update patient (optional)
-router.put("/:id", authenticateToken, requireAdmin,upload.single("image"), updatePatient);
+router.put("/:id", authorizeToken, requireAdmin,upload.single("image"), updatePatient);
 
 module.exports = router;
+

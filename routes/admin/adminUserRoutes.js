@@ -1,13 +1,14 @@
 const express = require('express');
 const { getAllUsers, getUserById, createUser, updateUser, deleteUser} = require("../../controller/admin/adminUserController");
-const { authenticateToken, requireAdmin } = require("../../middleware/admin/adminauthenticatemiddleware");
+// const { authenticateToken, requireAdmin } = require("../../middleware/admin/adminauthenticatemiddleware");
+const {authorizeToken, requireAdmin} = require("../../middleware/authMiddleware");
 
 const router = express.Router();
 
 // Get all users (admin only)
 router.get(
     "/",
-    authenticateToken,
+    authorizeToken,
     requireAdmin,
     getAllUsers
 );
@@ -15,25 +16,25 @@ router.get(
 // Get user by ID (admin only)
 router.get(
     "/:id",
-    authenticateToken,
+    authorizeToken,
     requireAdmin,
     getUserById
 );
 router.post(
     "/add-user",
-    authenticateToken,
+    authorizeToken,
     requireAdmin,
     createUser
 )
 router.delete(
     "/:id",
-    authenticateToken,
+    authorizeToken,
     requireAdmin,
     deleteUser
 )
 router.put(
     "/:id",
-    authenticateToken,
+    authorizeToken,
     requireAdmin,
     updateUser
 )

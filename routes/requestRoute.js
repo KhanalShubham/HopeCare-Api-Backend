@@ -12,12 +12,13 @@ const {
 // You would need to implement this middleware
 // authenticateToken: Checks if user is logged in
 // requireAdmin: Checks if the logged-in user has an 'admin' role
-const { authenticateToken, requireAdmin } = require('../middleware/admin/adminauthenticatemiddleware');
+// const { authenticateToken, requireAdmin } = require('../middleware/admin/adminauthenticatemiddleware');
 
 
 // Placeholder for file uploads (e.g., using multer)
 const upload = require('../middleware/uploadmiddleware');
-const {authorizeToken} = require("../middleware/patientMiddleware");
+const {authorizeToken,requireAdmin} = require("../middleware/authMiddleware");
+// const {authorizeToken} = require("../middleware/patientMiddleware");
 
 
 // ===============================================
@@ -37,10 +38,10 @@ router.route('/:id')
 // ADMIN ROUTES (Requires admin privileges)
 // ===============================================
 router.route('/admin')
-    .get(authenticateToken, requireAdmin, getAllRequestsForAdmin);
+    .get(authorizeToken, requireAdmin, getAllRequestsForAdmin);
 
 router.route('/admin/:id/status')
-    .patch(authenticateToken, requireAdmin, updateRequestStatus);
+    .patch(authorizeToken, requireAdmin, updateRequestStatus);
 
 
 module.exports = router;
