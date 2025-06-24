@@ -5,7 +5,7 @@ const userRoute = require('./routes/userRoute');
 const adminUserRoute = require("./routes/admin/adminUserRoutes");
 const cors = require('cors');
 const patientRoutes = require('./routes/patientRoute');
-const documentRoutes=require("./routes/documentRoute")
+const requestRoutes=require("./routes/requestRoute")
 const adminRoute=require("./routes/admin/adminRoute")
 const adminPatientRoute=require("./routes/admin/adminPatientRoutes")
 var bodyParser = require('body-parser')
@@ -36,7 +36,7 @@ app.use("/api/auth", userRoute);
 // app.use("/api/admin", adminUserRoute);
 app.use("/api/admin/patient",adminPatientRoute);
 app.use('/api/patients', patientRoutes);
-app.use("/api/document", documentRoutes)
+app.use("/api/request", requestRoutes)
 app.use("/api/auth/admin", adminRoute)
 app.use("/api/admin/user", adminUserRoute)
 
