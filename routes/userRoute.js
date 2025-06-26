@@ -8,7 +8,7 @@ router.post('/register', registerUser);
 
 router.post("/login", loginUser )
 
-// Donor: see all approved patients
+// Donor: see all approved user
 router.get('/approved', authorizeToken, getApprovedUser);
 
 // router.getAll("/", authorizeToken, )

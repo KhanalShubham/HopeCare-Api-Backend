@@ -17,6 +17,9 @@ const RequestSchema = new mongoose.Schema(
         neededAmount:{
             type:String,
         },
+        originalAmount:{
+            type:String,
+        },
         condition:{
             type:String,
             enum:["critical", "moderate"],

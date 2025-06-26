@@ -36,10 +36,11 @@ exports.addRequest = async (req, res) => {
 
     const newRequest = new Request({
       filename: req.file.filename,
-      filePath: relativeFilePath, // --- EDITED --- Use the new relative path
+      filePath: relativeFilePath,
       fileType: req.file.mimetype,
       description,
       neededAmount,
+      originalAmount:neededAmount,
       condition,
       inDepthStory,
       citizen,
@@ -188,7 +189,7 @@ exports.getAllRequestsForAdmin = async (req, res) => {
 exports.updateRequestStatus = async (req, res) => {
   console.log(req.body)
   try {
-    const { status, feedback } = req.body;
+    const { status,neededAmount, feedback } = req.body;
 
     // Validate status and feedback
     if (!status || !ALLOWED_STATUSES.includes(status) || status === 'pending') {
@@ -197,6 +198,10 @@ exports.updateRequestStatus = async (req, res) => {
 
     if (!feedback || feedback.trim() === '') {
       return res.status(400).json({ success: false, message: "Feedback is required when updating status." });
+    }
+
+    if(!neededAmount || isNaN(neededAmount)|| Number(neededAmount)<0){
+      return res.status(400).json({success: false, message:"A valid needed amount is required"});
     }
 
     const request = await Request.findById(req.params.id);
@@ -211,6 +216,7 @@ exports.updateRequestStatus = async (req, res) => {
 
     request.status = status;
     request.feedback = feedback;
+    request.neededAmount=neededAmount;
     await request.save();
 
     res.status(200).json({
