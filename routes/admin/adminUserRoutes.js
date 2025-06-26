@@ -1,42 +1,28 @@
 const express = require('express');
-const { getAllUsers, getUserById, createUser, updateUser, deleteUser} = require("../../controller/admin/adminUserController");
-// const { authenticateToken, requireAdmin } = require("../../middleware/admin/adminauthenticatemiddleware");
-const {authorizeToken, requireAdmin} = require("../../middleware/authMiddleware");
-
 const router = express.Router();
+const {
+    getAllUsers, getUserById,
+    deleteUser, updateUser, addUser
+} = require('../../controller/admin/adminUserController');
+const upload=require("../../middleware/fileupload");
 
-// Get all users (admin only)
-router.get(
-    "/",
-    authorizeToken,
-    requireAdmin,
-    getAllUsers
-);
+// const { authenticateToken, requireAdmin } = require("../../middleware/admin/adminauthenticatemiddleware");
+const {authorizeToken,requireAdmin} = require("../../middleware/authMiddleware");
 
-// Get user by ID (admin only)
-router.get(
-    "/:id",
-    authorizeToken,
-    requireAdmin,
-    getUserById
-);
-router.post(
-    "/add-user",
-    authorizeToken,
-    requireAdmin,
-    createUser
-)
-router.delete(
-    "/:id",
-    authorizeToken,
-    requireAdmin,
-    deleteUser
-)
-router.put(
-    "/:id",
-    authorizeToken,
-    requireAdmin,
-    updateUser
-)
+router.post("/add-patient",authorizeToken,requireAdmin,upload.single("image"),addUser);
+
+
+// List all patients
+router.get("/", authorizeToken, requireAdmin, getAllUsers);
+
+// Get patient by ID
+router.get("/:id", authorizeToken, requireAdmin, getUserById);
+
+// Delete patient
+router.delete("/:id", authorizeToken, requireAdmin, deleteUser);
+
+// Update patient (optional)
+router.put("/:id", authorizeToken, requireAdmin,upload.single("image"), updateUser);
 
 module.exports = router;
+

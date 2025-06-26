@@ -14,13 +14,27 @@ const RequestSchema = new mongoose.Schema(
         fileType: {
             type: String
         },
+        neededAmount:{
+            type:String,
+        },
+        condition:{
+            type:String,
+            enum:["critical", "moderate"],
+            default:"moderate"
+        },
+        inDepthStory:{
+            type:String
+        },
+        citizen:{
+          type:String
+        },
         description: {
             type: String
         },
         // The user (e.g., Patient) who uploaded the request
         uploadedBy: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Patient', // Make sure you have a 'Patient' model
+            ref: 'User', // Make sure you have a 'Patient' model
             required: true
         },
         // The status of the request, managed by the admin

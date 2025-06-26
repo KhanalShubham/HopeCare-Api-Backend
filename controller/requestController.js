@@ -1,8 +1,9 @@
-// controllers/requestController.js
-
 const Request = require('../model/Request');
 const fs = require('fs');
 const path = require('path');
+
+// Constants for allowed request statuses
+const ALLOWED_STATUSES = ["pending", "approved", "declined"];
 
 // ===============================================
 // USER/PATIENT-FACING FUNCTIONS
@@ -15,21 +16,35 @@ const path = require('path');
  */
 exports.addRequest = async (req, res) => {
   try {
-    const { description } = req.body;
-    // Assuming user ID is available from auth middleware (e.g., req.user.id)
-    const patientId = req.user.id;
+    const { description, neededAmount, condition, inDepthStory, citizen } = req.body;
+    const userId = req.user.id;
 
+    // Validate required fields
+    if (!description || !neededAmount || !condition || !inDepthStory || !citizen) {
+      return res.status(400).json({ success: false, message: "All fields are required." });
+    }
+
+    // Validate uploaded file
     if (!req.file) {
       return res.status(400).json({ success: false, message: "File is required." });
     }
 
+    // --- EDITED ---
+    // Create a web-accessible relative path. Your multer saves to 'uploads/documents'.
+    // We use forward slashes for web compatibility.
+    const relativeFilePath = `uploads/documents/${req.file.filename}`;
+
     const newRequest = new Request({
       filename: req.file.filename,
-      filePath: req.file.path,
+      filePath: relativeFilePath, // --- EDITED --- Use the new relative path
       fileType: req.file.mimetype,
       description,
-      uploadedBy: patientId,
-      status: 'pending' // Explicitly set to pending
+      neededAmount,
+      condition,
+      inDepthStory,
+      citizen,
+      uploadedBy: userId,
+      status: 'pending'
     });
 
     await newRequest.save();
@@ -41,7 +56,7 @@ exports.addRequest = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Add Request Error:", error);
+    console.error("Add Request Error:", error.message, error.stack);
     res.status(500).json({ success: false, message: "Server Error: Could not add request." });
   }
 };
@@ -54,7 +69,7 @@ exports.addRequest = async (req, res) => {
 exports.getMyRequests = async (req, res) => {
   try {
     const requests = await Request.find({ uploadedBy: req.user.id })
-        .sort({ createdAt: -1 }); // Show most recent first
+        .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -63,18 +78,16 @@ exports.getMyRequests = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Fetch My Requests Error:", error);
+    console.error("Fetch My Requests Error:", error.message, error.stack);
     res.status(500).json({ success: false, message: "Server Error: Could not fetch requests." });
   }
 };
-
 
 /**
  * @desc    Delete a request
  * @route   DELETE /api/requests/:id
  * @access  Private (User - Owner)
  */
-
 exports.deleteRequest = async (req, res) => {
   try {
     const request = await Request.findById(req.params.id);
@@ -85,47 +98,50 @@ exports.deleteRequest = async (req, res) => {
 
     // Ensure the user owns the request
     if (request.uploadedBy.toString() !== req.user.id) {
-      return res.status(401).json({ success: false, message: "Not authorized to delete this request." });
+      return res.status(403).json({ success: false, message: "Not authorized to delete this request." });
     }
 
-    // Optional: Only allow deletion if the request is still pending
+    // Only allow deletion if the request is pending
     if (request.status !== 'pending') {
       return res.status(400).json({ success: false, message: "Cannot delete a request that has already been reviewed." });
     }
 
-    // --- FIX #2: Robust File Path Deletion ---
-    // Construct the absolute path from the project root to be safe.
-    // This assumes the controller is in a `/controllers` folder and uploads are in `/uploads`.
+    // --- EDITED ---
+    // Reconstruct the full, absolute path to the file on the server for deletion.
+    // `request.filePath` is now the relative path, e.g., "uploads/documents/file.pdf"
     const absoluteFilePath = path.join(__dirname, '..', request.filePath);
 
-    fs.unlink(absoluteFilePath, (err) => {
-      if (err) {
-        // This is not a critical error if the file is already gone, so we just log it.
-        console.error("Info: File could not be deleted (it may have been removed already):", err.message);
-      } else {
-        console.log("Successfully deleted file from filesystem:", absoluteFilePath);
-      }
-    });
+    // Delete attached file if it exists
+    if (fs.existsSync(absoluteFilePath)) {
+      fs.unlink(absoluteFilePath, (err) => {
+        if (err) {
+          // Log the error but don't block the request from being deleted
+          console.error("Error deleting file:", err.message);
+        } else {
+          console.log("Successfully deleted file:", absoluteFilePath);
+        }
+      });
+    } else {
+      console.warn("File not found for deletion, but proceeding to delete DB record:", absoluteFilePath);
+    }
 
-    // --- FIX #1: Use deleteOne() instead of remove() ---
     await request.deleteOne();
 
     res.status(200).json({ success: true, message: "Request deleted successfully." });
 
   } catch (error) {
-    console.error("Delete Request Error:", error);
+    console.error("Delete Request Error:", error.message, error.stack);
     res.status(500).json({ success: false, message: "Server Error: Could not delete request." });
   }
 };
 
-
 // ===============================================
 // ADMIN-FACING FUNCTIONS
 // ===============================================
+// (No changes needed in the admin section for this fix)
 
 /**
- * @desc    Get all requests for admin view, sorted by date.
- *          Can be filtered by status (e.g., /api/requests/admin?status=pending)
+ * @desc    Get all requests for admin, optionally filtered by status and date
  * @route   GET /api/requests/admin
  * @access  Private (Admin)
  */
@@ -133,26 +149,23 @@ exports.getAllRequestsForAdmin = async (req, res) => {
   try {
     const query = {};
 
-    // Filter by status if provided in query params
-    if (req.query.status && ["pending", "approved", "declined"].includes(req.query.status)) {
+    // Filter by status if provided
+    if (req.query.status && ALLOWED_STATUSES.includes(req.query.status)) {
       query.status = req.query.status;
     }
 
-    // To get requests for the "current date" (today), you can add a date filter
-    // For example: /api/requests/admin?date=today
+    // Filter by today's date if provided
     if (req.query.date === 'today') {
       const start = new Date();
       start.setHours(0, 0, 0, 0);
-
       const end = new Date();
       end.setHours(23, 59, 59, 999);
-
       query.createdAt = { $gte: start, $lt: end };
     }
 
     const requests = await Request.find(query)
-        .populate('uploadedBy', 'name email') // Populate user info (adjust fields as needed)
-        .sort({ createdAt: -1 }); // Sort by newest first
+        .populate('uploadedBy', 'name email')
+        .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -162,12 +175,10 @@ exports.getAllRequestsForAdmin = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Admin Fetch Requests Error:", error);
+    console.error("Admin Fetch Requests Error:", error.message, error.stack);
     res.status(500).json({ success: false, message: "Server Error: Could not fetch requests." });
   }
 };
-
-//get request by patient
 
 /**
  * @desc    Approve or Decline a request
@@ -175,12 +186,12 @@ exports.getAllRequestsForAdmin = async (req, res) => {
  * @access  Private (Admin)
  */
 exports.updateRequestStatus = async (req, res) => {
+  console.log(req.body)
   try {
-    console.log(req.body)
     const { status, feedback } = req.body;
 
-    // Validate input
-    if (!status || !['approved', 'declined'].includes(status)) {
+    // Validate status and feedback
+    if (!status || !ALLOWED_STATUSES.includes(status) || status === 'pending') {
       return res.status(400).json({ success: false, message: "Invalid status provided. Must be 'approved' or 'declined'." });
     }
 
@@ -189,19 +200,17 @@ exports.updateRequestStatus = async (req, res) => {
     }
 
     const request = await Request.findById(req.params.id);
-
     if (!request) {
       return res.status(404).json({ success: false, message: "Request not found." });
     }
 
-    // You might want to prevent re-approving/declining
+    // Prevent re-approving or re-declining
     if (request.status !== 'pending') {
-      return res.status(400).json({ success: false, message: `This request has already been ${request.status}.`})
+      return res.status(400).json({ success: false, message: `This request has already been ${request.status}.` });
     }
 
     request.status = status;
     request.feedback = feedback;
-
     await request.save();
 
     res.status(200).json({
@@ -211,7 +220,7 @@ exports.updateRequestStatus = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Update Request Status Error:", error);
-    res.status(500).json({ success: false, message: "Server Error: Could not update request status."+error });
+    console.error("Update Request Status Error:", error.message, error.stack);
+    res.status(500).json({ success: false, message: "Server Error: Could not update request status." });
   }
 };
