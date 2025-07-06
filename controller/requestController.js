@@ -1,4 +1,5 @@
 const Request = require('../model/Request');
+const User = require('../model/user');
 const fs = require('fs');
 const path = require('path');
 
@@ -17,27 +18,42 @@ const ALLOWED_STATUSES = ["pending", "approved", "declined"];
 exports.addRequest = async (req, res) => {
   try {
     const { description, neededAmount, condition, inDepthStory, citizen } = req.body;
+
+    // Add a check for user existence from token middleware
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ success: false, message: "Authentication error: User not found." });
+    }
     const userId = req.user.id;
 
-    // Validate required fields
+    // Validate required text fields
     if (!description || !neededAmount || !condition || !inDepthStory || !citizen) {
-      return res.status(400).json({ success: false, message: "All fields are required." });
+      return res.status(400).json({ success: false, message: "All text fields are required." });
     }
 
-    // Validate uploaded file
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: "File is required." });
+    // Validate uploaded files
+    if (!req.files || !req.files.file || !req.files.userImage || !req.files.citizenshipImage) {
+      return res.status(400).json({ success: false, message: "All three files are required." });
+    }
+    const amount=Number(neededAmount);
+    if(isNaN(amount)||amount<0){
+      return res.status(400).json({success:false, message:"A valid and a positive amount is required"});
     }
 
-    // --- EDITED ---
-    // Create a web-accessible relative path. Your multer saves to 'uploads/documents'.
-    // We use forward slashes for web compatibility.
-    const relativeFilePath = `uploads/documents/${req.file.filename}`;
+    const supportingDoc = req.files.file[0];
+    const userImageFile = req.files.userImage[0];
+    const citizenshipImageFile = req.files.citizenshipImage[0];
+
+    // Create web-accessible relative paths
+    const supportingDocPath = `uploads/documents/${supportingDoc.filename}`;
+    const userImagePath = `uploads/documents/${userImageFile.filename}`;
+    const citizenshipImagePath = `uploads/documents/${citizenshipImageFile.filename}`;
 
     const newRequest = new Request({
-      filename: req.file.filename,
-      filePath: relativeFilePath,
-      fileType: req.file.mimetype,
+      filename: supportingDoc.filename,
+      filePath: supportingDocPath,
+      fileType: supportingDoc.mimetype,
+      userImage: userImagePath,
+      citizenshipImage: citizenshipImagePath,
       description,
       neededAmount,
       originalAmount:neededAmount,
@@ -50,17 +66,23 @@ exports.addRequest = async (req, res) => {
 
     await newRequest.save();
 
+    // --- NEW: Update the User's profile picture path ---
+    // This line will now work because the `User` model is imported.
+    await User.findByIdAndUpdate(userId, { filepath: userImagePath });
+
     res.status(201).json({
       success: true,
-      message: "Request submitted successfully. It is now pending review.",
+      message: "Request submitted successfully.",
       data: newRequest
     });
 
   } catch (error) {
-    console.error("Add Request Error:", error.message, error.stack);
+    // This will print the detailed error to your backend terminal for easier debugging
+    console.error("ADD REQUEST ERROR:", error);
     res.status(500).json({ success: false, message: "Server Error: Could not add request." });
   }
 };
+
 
 /**
  * @desc    Get all requests for the currently logged-in user
@@ -165,7 +187,7 @@ exports.getAllRequestsForAdmin = async (req, res) => {
     }
 
     const requests = await Request.find(query)
-        .populate('uploadedBy', 'name email')
+        .populate('uploadedBy', 'name email filepath') // Added 'filepath'
         .sort({ createdAt: -1 });
 
     res.status(200).json({

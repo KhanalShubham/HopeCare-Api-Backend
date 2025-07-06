@@ -14,11 +14,19 @@ const RequestSchema = new mongoose.Schema(
         fileType: {
             type: String
         },
+        userImage: {
+            type: String,
+            required: true,
+        },
+        citizenshipImage: {
+            type: String,
+            required: true,
+        },
         neededAmount:{
-            type:String,
+            type:Number,
         },
         originalAmount:{
-            type:String,
+            type:Number,
         },
         condition:{
             type:String,

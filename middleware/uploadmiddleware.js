@@ -21,11 +21,18 @@ const storage = multer.diskStorage({
 
 // File type filter
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
-  if (allowedTypes.includes(file.mimetype)) {
+  const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf', 'image/heic', 'image/heif', 'image/webp'];
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.pdf', '.heic', '.heif', '.webp'];
+
+  const fileExtension = path.extname(file.originalname).toLowerCase();
+
+  console.log('Received file mimetype:', file.mimetype);
+  console.log('Received file extension:', fileExtension);
+
+  if (allowedMimeTypes.includes(file.mimetype) || allowedExtensions.includes(fileExtension)) {
     cb(null, true);
   } else {
-    cb(new Error('Unsupported file type. Only JPEG, JPG, PNG, and PDF files are allowed.'));
+    cb(new Error('Unsupported file type. Please upload a JPEG, JPG, PNG, PDF, HEIC, or WebP file.'));
   }
 };
 
@@ -33,8 +40,12 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
+    fileSize: 5 * 1024 * 1024 // 5MB limit per file
   }
-});
+}).fields([
+  { name: 'file', maxCount: 1 },             // Original supporting document
+  { name: 'userImage', maxCount: 1 },        // User's profile photo
+  { name: 'citizenshipImage', maxCount: 1 }  // Citizenship proof image
+]);
 
 module.exports = upload;

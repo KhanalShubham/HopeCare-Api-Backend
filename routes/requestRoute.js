@@ -25,7 +25,7 @@ const {authorizeToken,requireAdmin} = require("../middleware/authMiddleware");
 // USER ROUTES (Requires login)
 // ===============================================
 router.route('/')
-    .post(authorizeToken, upload.single('file'), addRequest);
+    .post(authorizeToken, upload, addRequest);
 
 router.route('/my-requests')
     .get(authorizeToken, getMyRequests);
