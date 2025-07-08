@@ -12,6 +12,7 @@ const requestRoutes = require("./routes/requestRoute");
 const adminRoute = require("./routes/admin/adminRoute");
 const chatRoutes = require('./routes/chatRoutes'); // Adjust path
 const path = require("path");
+const uploadRoutes = require('./routes/uploadRoutes')
 
 const socketAuthMiddleware = require('./middleware/socketAuthMiddleware');
 const socketController = require('./controller/socketController');
@@ -47,6 +48,7 @@ app.use("/api/request", requestRoutes);
 app.use("/api/auth/admin", adminRoute);
 app.use("/api/admin/user", adminUserRoute);
 app.use('/api/chat', chatRoutes); // Mount your chat routes
+app.use('/api', uploadRoutes);
 
 app.get('/', (req, res) => {
     return res.status(200).json({ message: "Server is running", success: true });
