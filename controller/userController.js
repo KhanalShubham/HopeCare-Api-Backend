@@ -42,25 +42,37 @@ exports.registerUser=async(req, res) =>{
 }
 
 // Login user
-exports.loginUser=async(req, res) =>{
+exports.loginUser = async (req, res) => {
     const { email, password } = req.body;
+    console.log("Backend: Login attempt for email:", email); // Added
     try {
-        const user = await User.findOne({ email:email });
+        const user = await User.findOne({ email: email });
+        console.log("Backend: User found (or null):", user); // Added
+
         if (!user) {
+            console.log("Backend: User not found for email:", email); // Added
             return res.status(404).json({ success: false, message: "User not found" });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
+        console.log("Backend: Password match result:", isMatch); // Added
         if (!isMatch) {
+            console.log("Backend: Invalid credentials for user:", email); // Added
             return res.status(401).json({ success: false, message: "Invalid credentials" });
         }
 
-        // Generate JWT token
+        // --- FIX: Include user.name/user.email in JWT payload for display on backend ---
         const token = jwt.sign(
-            { id: user._id, role: "user" },
+            {
+                id: user._id,
+                role: "user",
+                name: user.name,
+                email: user.email
+            },
             process.env.JWT_SECRET,
             { expiresIn: "1d" }
         );
+        console.log("Backend: Generated JWT token (first few chars):", token.substring(0, 50) + "..."); // Added, for security don't log full token
 
         res.status(200).json({
             success: true,
@@ -70,15 +82,21 @@ exports.loginUser=async(req, res) =>{
                 id: user._id,
                 name: user.name,
                 contact: user.contact,
-                email:user.email
+                email: user.email
             }
         });
+        console.log("Backend: User data sent in response:", {
+            id: user._id,
+            name: user.name,
+            contact: user.contact,
+            email: user.email
+        }); // Added
 
     } catch (error) {
-        console.log(error)
+        console.error("Backend: Server error during login:", error); // Changed to error, Added
         res.status(500).json({ success: false, message: "Server error" });
     }
-}
+};
 
 
 // Get all approved users (for donor dashboard)

@@ -1,7 +1,9 @@
+// controller/requestController.js
 const Request = require('../model/Request');
-const User = require('../model/user');
+const User = require('../model/user'); // Assuming you also need User model here
 const fs = require('fs');
 const path = require('path');
+const { sendNotificationToUser } = require('../services/notificationServices'); // <--- NEW IMPORT
 
 // Constants for allowed request statuses
 const ALLOWED_STATUSES = ["pending", "approved", "declined"];
@@ -19,18 +21,15 @@ exports.addRequest = async (req, res) => {
   try {
     const { description, neededAmount, condition, inDepthStory, citizen } = req.body;
 
-    // Add a check for user existence from token middleware
     if (!req.user || !req.user.id) {
       return res.status(401).json({ success: false, message: "Authentication error: User not found." });
     }
     const userId = req.user.id;
 
-    // Validate required text fields
     if (!description || !neededAmount || !condition || !inDepthStory || !citizen) {
       return res.status(400).json({ success: false, message: "All text fields are required." });
     }
 
-    // Validate uploaded files
     if (!req.files || !req.files.file || !req.files.userImage || !req.files.citizenshipImage) {
       return res.status(400).json({ success: false, message: "All three files are required." });
     }
@@ -43,7 +42,6 @@ exports.addRequest = async (req, res) => {
     const userImageFile = req.files.userImage[0];
     const citizenshipImageFile = req.files.citizenshipImage[0];
 
-    // Create web-accessible relative paths
     const supportingDocPath = `uploads/documents/${supportingDoc.filename}`;
     const userImagePath = `uploads/documents/${userImageFile.filename}`;
     const citizenshipImagePath = `uploads/documents/${citizenshipImageFile.filename}`;
@@ -66,8 +64,6 @@ exports.addRequest = async (req, res) => {
 
     await newRequest.save();
 
-    // --- NEW: Update the User's profile picture path ---
-    // This line will now work because the `User` model is imported.
     await User.findByIdAndUpdate(userId, { filepath: userImagePath });
 
     res.status(201).json({
@@ -77,7 +73,6 @@ exports.addRequest = async (req, res) => {
     });
 
   } catch (error) {
-    // This will print the detailed error to your backend terminal for easier debugging
     console.error("ADD REQUEST ERROR:", error);
     res.status(500).json({ success: false, message: "Server Error: Could not add request." });
   }
@@ -119,26 +114,19 @@ exports.deleteRequest = async (req, res) => {
       return res.status(404).json({ success: false, message: "Request not found." });
     }
 
-    // Ensure the user owns the request
     if (request.uploadedBy.toString() !== req.user.id) {
       return res.status(403).json({ success: false, message: "Not authorized to delete this request." });
     }
 
-    // Only allow deletion if the request is pending
     if (request.status !== 'pending') {
       return res.status(400).json({ success: false, message: "Cannot delete a request that has already been reviewed." });
     }
 
-    // --- EDITED ---
-    // Reconstruct the full, absolute path to the file on the server for deletion.
-    // `request.filePath` is now the relative path, e.g., "uploads/documents/file.pdf"
     const absoluteFilePath = path.join(__dirname, '..', request.filePath);
 
-    // Delete attached file if it exists
     if (fs.existsSync(absoluteFilePath)) {
       fs.unlink(absoluteFilePath, (err) => {
         if (err) {
-          // Log the error but don't block the request from being deleted
           console.error("Error deleting file:", err.message);
         } else {
           console.log("Successfully deleted file:", absoluteFilePath);
@@ -161,7 +149,6 @@ exports.deleteRequest = async (req, res) => {
 // ===============================================
 // ADMIN-FACING FUNCTIONS
 // ===============================================
-// (No changes needed in the admin section for this fix)
 
 /**
  * @desc    Get all requests for admin, optionally filtered by status and date
@@ -172,12 +159,10 @@ exports.getAllRequestsForAdmin = async (req, res) => {
   try {
     const query = {};
 
-    // Filter by status if provided
     if (req.query.status && ALLOWED_STATUSES.includes(req.query.status)) {
       query.status = req.query.status;
     }
 
-    // Filter by today's date if provided
     if (req.query.date === 'today') {
       const start = new Date();
       start.setHours(0, 0, 0, 0);
@@ -187,7 +172,7 @@ exports.getAllRequestsForAdmin = async (req, res) => {
     }
 
     const requests = await Request.find(query)
-        .populate('uploadedBy', 'name email filepath') // Added 'filepath'
+        .populate('uploadedBy', 'name email filepath')
         .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -209,11 +194,10 @@ exports.getAllRequestsForAdmin = async (req, res) => {
  * @access  Private (Admin)
  */
 exports.updateRequestStatus = async (req, res) => {
-  console.log(req.body)
+  console.log(req.body);
   try {
-    const { status,neededAmount, feedback } = req.body;
+    const { status, neededAmount, feedback } = req.body;
 
-    // Validate status and feedback
     if (!status || !ALLOWED_STATUSES.includes(status) || status === 'pending') {
       return res.status(400).json({ success: false, message: "Invalid status provided. Must be 'approved' or 'declined'." });
     }
@@ -222,8 +206,8 @@ exports.updateRequestStatus = async (req, res) => {
       return res.status(400).json({ success: false, message: "Feedback is required when updating status." });
     }
 
-    if(!neededAmount || isNaN(neededAmount)|| Number(neededAmount)<0){
-      return res.status(400).json({success: false, message:"A valid needed amount is required"});
+    if (!neededAmount || isNaN(neededAmount) || Number(neededAmount) < 0) {
+      return res.status(400).json({ success: false, message: "A valid needed amount is required" });
     }
 
     const request = await Request.findById(req.params.id);
@@ -231,15 +215,46 @@ exports.updateRequestStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: "Request not found." });
     }
 
-    // Prevent re-approving or re-declining
     if (request.status !== 'pending') {
       return res.status(400).json({ success: false, message: `This request has already been ${request.status}.` });
     }
 
     request.status = status;
     request.feedback = feedback;
-    request.neededAmount=neededAmount;
+    request.neededAmount = neededAmount;
     await request.save();
+
+    // --- NEW: Trigger Notification for Request Status Change ---
+    if (request.uploadedBy) {
+      let notificationTitle;
+      let notificationBody;
+
+      switch (status) {
+        case 'approved':
+          notificationTitle = 'Your Request Has Been Approved!';
+          notificationBody = `Great news! Your request for "${request.description}" has been approved for Rs. ${request.neededAmount}.`;
+          break;
+        case 'declined':
+          notificationTitle = 'Your Request Has Been Declined.';
+          notificationBody = `Unfortunately, your request for "${request.description}" has been declined. Feedback: ${feedback || 'N/A'}.`;
+          break;
+          // 'pending' status changes are generally not notified here as this action moves it *from* pending.
+      }
+
+      const notificationData = {
+        type: 'request_status_update',
+        requestId: request._id.toString(),
+        newStatus: status,
+        description: request.description,
+        feedback: feedback || 'No additional feedback.',
+      };
+
+      await sendNotificationToUser(request.uploadedBy.toString(), {
+        title: notificationTitle,
+        body: notificationBody,
+        data: notificationData
+      });
+    }
 
     res.status(200).json({
       success: true,
