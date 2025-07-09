@@ -37,7 +37,7 @@ const RequestSchema = new mongoose.Schema(
             type:String
         },
         citizen:{
-          type:String
+            type:String
         },
         description: {
             type: String
