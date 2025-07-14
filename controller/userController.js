@@ -119,3 +119,79 @@ exports.deleteUser=async(req, res) =>{
     await findByIdAndDelete(req.params.id);
     res.json({ success: true, message: "User deleted" });
 }
+exports.getMe = async (req, res) => {
+    try {
+        // req.user.id is added by the authorizeToken middleware
+        const user = await User.findById(req.user.id).select('-password'); // '-password' excludes the password from the result
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        res.status(200).json({ success: true, data: user });
+
+    } catch (error) {
+        console.error("Error in getMe controller:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+};
+exports.updateMe = async (req, res) => {
+    const { name, description, contact, disease } = req.body;
+
+    try {
+        const user = await User.findByIdAndUpdate(
+            req.user.id,
+            { name, description, contact, disease },
+            { new: true, runValidators: true }
+        ).select('-password');
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        res.status(200).json({ success: true, message: 'Profile updated successfully!', data: user });
+
+    } catch (error) {
+        // ✅ This new block checks for specific errors
+        // Check for MongoDB duplicate key error (code 11000)
+        if (error.code === 11000) {
+            // Find out which field was duplicated (e.g., 'contact' or 'email')
+            const field = Object.keys(error.keyValue)[0];
+            // Send a clear error message to the frontend
+            return res.status(400).json({ success: false, message: `An account with this ${field} already exists.` });
+        }
+
+        // For any other errors, log them and send a generic server error
+        console.error("Error updating profile:", error);
+        res.status(500).json({ success: false, message: 'Server error while updating profile' });
+    }
+};
+// ✅ NEW FUNCTION: Change User Password
+exports.changePassword = async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+
+    try {
+        // Find user and get their password hash
+        const user = await User.findById(req.user.id).select('+password');
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Check if the current password is correct
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ success: false, message: 'Incorrect current password' });
+        }
+
+        // Hash the new password and save it
+        user.password = await bcrypt.hash(newPassword, 10);
+        await user.save();
+
+        res.status(200).json({ success: true, message: 'Password changed successfully' });
+
+    } catch (error) {
+        console.error("Error changing password:", error);
+        res.status(500).json({ success: false, message: 'Server error while changing password' });
+    }
+};

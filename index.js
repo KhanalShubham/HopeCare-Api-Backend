@@ -18,6 +18,7 @@ const socketAuthMiddleware = require('./middleware/socketAuthMiddleware');
 const socketController = require('./controller/socketController');
 const notificationService = require('./services/notificationServices');
 const publicCampaignsRoute = require('./routes/publicCampaigns');
+const donationRoutes = require('./routes/donationRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -25,8 +26,8 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:5173", // <--- CHANGE THIS
-        methods: ['GET','POST']
+        origin: "http://localhost:5173", //
+        methods: ['GET','POST','PUT']
     }
 });
 
@@ -49,6 +50,8 @@ app.use("/api/admin/user", adminUserRoute);
 app.use('/api/chat', chatRoutes);
 app.use('/api', uploadRoutes);
 app.use('/api/campaigns', publicCampaignsRoute);
+app.use('/api/donations', donationRoutes);
+
 
 app.get('/', (req, res) => {
     return res.status(200).json({ message: "Server is running", success: true });
@@ -60,8 +63,4 @@ io.use(socketAuthMiddleware);
 // WebSocket event handlers
 socketController(io); // socketController now makes userSockets global
 
-// Server Listen
-const PORT = process.env.PORT || 5050;
-server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+module.exports = app;

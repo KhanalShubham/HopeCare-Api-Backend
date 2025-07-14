@@ -32,12 +32,6 @@ router.get('/', async (req, res) => {
 });
 
 
-// ========================================================================
-// ===                  THIS IS THE NEWLY ADDED SECTION                 ===
-// ========================================================================
-// @route   GET /api/campaigns/:id
-// @desc    Get a single campaign's details for the donation page
-// @access  Public
 router.get('/:id', async (req, res) => {
     try {
         const campaign = await Request.findById(req.params.id)

@@ -1,6 +1,6 @@
 const express = require("express")
 const router = express.Router()
-const {registerUser, loginUser, getApprovedUser, approveUser, deleteUser}=require("../controller/userController");
+const {registerUser, loginUser, getApprovedUser, approveUser, deleteUser, getMe, updateMe, changePassword}=require("../controller/userController");
 const {authorizeToken,requireAdmin} = require("../middleware/authMiddleware");
 
 // User registration (from mobile)
@@ -18,5 +18,10 @@ router.put('/:id/approve', authorizeToken, requireAdmin, approveUser);
 
 // Admin: delete patient
 router.delete('/:id', authorizeToken, requireAdmin, deleteUser);
+router.get('/me', authorizeToken, getMe);
+router.put('/me', authorizeToken, updateMe); // ✅ Route for updating profile
+router.put('/changepassword', authorizeToken, changePassword); // ✅ Route for changing password
+// Change it to this:
+
 
 module.exports=router
