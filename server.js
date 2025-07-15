@@ -1,10 +1,10 @@
 require("dotenv").config();
-const app = require("./index");
+const { server } = require("./index");
 
 const PORT = process.env.PORT || 5050;
-app.listen(
+server.listen(
     PORT,
     () => {
-        console.log("Server running");
+        console.log("Server running on port", PORT);
     }
 ); 

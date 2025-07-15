@@ -13,6 +13,7 @@ const adminRoute = require("./routes/admin/adminRoute");
 const chatRoutes = require('./routes/chatRoutes'); // Adjust path
 const path = require("path");
 const uploadRoutes = require('./routes/uploadRoutes')
+const notificationRoutes = require('./routes/notificationRoutes');
 
 const socketAuthMiddleware = require('./middleware/socketAuthMiddleware');
 const socketController = require('./controller/socketController');
@@ -51,6 +52,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api', uploadRoutes);
 app.use('/api/campaigns', publicCampaignsRoute);
 app.use('/api/donations', donationRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 
 app.get('/', (req, res) => {
@@ -63,4 +65,4 @@ io.use(socketAuthMiddleware);
 // WebSocket event handlers
 socketController(io); // socketController now makes userSockets global
 
-module.exports = app;
+module.exports = { app, server };
