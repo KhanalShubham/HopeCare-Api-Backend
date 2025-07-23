@@ -21,6 +21,8 @@ router.delete('/:id', authorizeToken, requireAdmin, deleteUser);
 router.get('/me', authorizeToken, getMe);
 router.put('/me', authorizeToken, updateMe); // ✅ Route for updating profile
 router.put('/changepassword', authorizeToken, changePassword); // ✅ Route for changing password
+// Social login (Google/Facebook)
+router.post('/social-login', require('../controller/userController').socialLogin);
 // Change it to this:
 
 

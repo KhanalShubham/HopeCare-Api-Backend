@@ -1,6 +1,10 @@
 const User=require("../model/user")
 const bcrypt=require("bcrypt")
 const jwt=require("jsonwebtoken")
+const { OAuth2Client } = require('google-auth-library');
+const fetch = require('node-fetch');
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID';
+const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 
 // Create user (register)
@@ -193,5 +197,37 @@ exports.changePassword = async (req, res) => {
     } catch (error) {
         console.error("Error changing password:", error);
         res.status(500).json({ success: false, message: 'Server error while changing password' });
+    }
+};
+
+exports.socialLogin = async (req, res) => {
+    const { provider, token } = req.body;
+    let email, name;
+    try {
+        if (provider === 'google') {
+            const ticket = await client.verifyIdToken({
+                idToken: token,
+                audience: GOOGLE_CLIENT_ID,
+            });
+            const payload = ticket.getPayload();
+            email = payload.email;
+            name = payload.name;
+        } else if (provider === 'facebook') {
+            const fbRes = await fetch(`https://graph.facebook.com/me?fields=id,name,email&access_token=${token}`);
+            const fbData = await fbRes.json();
+            email = fbData.email;
+            name = fbData.name;
+        } else {
+            return res.status(400).json({ error: 'Unsupported provider' });
+        }
+        let user = await User.findOne({ email });
+        if (!user) {
+            user = new User({ email, name });
+            await user.save();
+        }
+        const appToken = jwt.sign({ id: user._id, name: user.name, email: user.email }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        res.json({ token: appToken, user });
+    } catch (err) {
+        res.status(401).json({ error: 'Invalid social login' });
     }
 };
