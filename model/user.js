@@ -42,7 +42,8 @@ const UserSchema = new mongoose.Schema(
         },
         filepath: {
             type: String
-        }
+        },
+        photoUrl: { type: String, default: "" }
     },
     { timestamps: true }
 );

@@ -140,12 +140,17 @@ exports.getMe = async (req, res) => {
     }
 };
 exports.updateMe = async (req, res) => {
-    const { name, description, contact, disease } = req.body;
+    // Add photoUrl to destructure
+    const { name, description, contact, disease, photoUrl } = req.body;
 
     try {
+        // Add photoUrl to update object
+        const updateData = { name, description, contact, disease };
+        if (photoUrl) updateData.photoUrl = photoUrl;
+
         const user = await User.findByIdAndUpdate(
             req.user.id,
-            { name, description, contact, disease },
+            updateData,
             { new: true, runValidators: true }
         ).select('-password');
 
@@ -156,16 +161,10 @@ exports.updateMe = async (req, res) => {
         res.status(200).json({ success: true, message: 'Profile updated successfully!', data: user });
 
     } catch (error) {
-        // ✅ This new block checks for specific errors
-        // Check for MongoDB duplicate key error (code 11000)
         if (error.code === 11000) {
-            // Find out which field was duplicated (e.g., 'contact' or 'email')
             const field = Object.keys(error.keyValue)[0];
-            // Send a clear error message to the frontend
             return res.status(400).json({ success: false, message: `An account with this ${field} already exists.` });
         }
-
-        // For any other errors, log them and send a generic server error
         console.error("Error updating profile:", error);
         res.status(500).json({ success: false, message: 'Server error while updating profile' });
     }

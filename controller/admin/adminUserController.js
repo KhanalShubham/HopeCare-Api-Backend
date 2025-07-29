@@ -15,7 +15,7 @@ exports.getAllUsers = async (req, res) => {
         const skips = (page - 1) * limit;
 
         const users = await User.find(filters)
-            .select("-password") // Important for security
+            .select("-password") 
             .sort({ createdAt: -1 })
             .skip(skips)
             .limit(Number(limit));
