@@ -1,29 +1,61 @@
-const express = require("express")
-const router = express.Router()
-const {registerUser, loginUser, getApprovedUser, approveUser, deleteUser, getMe, updateMe, changePassword}=require("../controller/userController");
-const {authorizeToken,requireAdmin} = require("../middleware/authMiddleware");
+const express = require("express");
+const router = express.Router();
 
-// User registration (from mobile)
-router.post('/register', registerUser);
+// ## 1. Import Controllers and All Middlewares ##
+const {
+    registerUser,
+    loginUser,
+    getApprovedUser,
+    approveUser,
+    deleteUser,
+    getMe,
+    updateMe,
+    changePassword,
+    socialLogin // Ensure socialLogin is exported from your controller
+} = require("../controller/userController");
 
-router.post("/login", loginUser )
+const { authorizeToken, requireAdmin } = require("../middleware/authMiddleware");
 
-// Donor: see all approved user
+// Import the new security middlewares
+const authLimiter = require('../middleware/rateLimiter');
+const verifyRecaptcha = require('../middleware/recaptcha');
+
+
+// ## 2. Define Public Routes with Security Layers ##
+
+// User registration with rate limiting and reCAPTCHA
+router.post('/register', [authLimiter], registerUser);
+
+// User login with rate limiting and reCAPTCHA
+router.post("/login", [authLimiter], loginUser);
+
+// Social login (Google/Facebook) - reCAPTCHA is not typically used here
+// as these providers have their own security.
+router.post('/social-login', socialLogin);
+
+
+// ## 3. Define Protected User Routes ##
+
+// Get personal profile information
+router.get('/me', authorizeToken, getMe);
+
+// Update personal profile information
+router.put('/me', authorizeToken, updateMe);
+
+// Change password for the logged-in user
+router.put('/changepassword', authorizeToken, changePassword);
+
+// Donor: see all approved users
 router.get('/approved', authorizeToken, getApprovedUser);
 
-// router.getAll("/", authorizeToken, )
 
-// Admin: approve patient
+// ## 4. Define Admin-Only Routes ##
+
+// Admin: approve a user
 router.put('/:id/approve', authorizeToken, requireAdmin, approveUser);
 
-// Admin: delete patient
+// Admin: delete a user
 router.delete('/:id', authorizeToken, requireAdmin, deleteUser);
-router.get('/me', authorizeToken, getMe);
-router.put('/me', authorizeToken, updateMe); // ✅ Route for updating profile
-router.put('/changepassword', authorizeToken, changePassword); // ✅ Route for changing password
-// Social login (Google/Facebook)
-router.post('/social-login', require('../controller/userController').socialLogin);
-// Change it to this:
 
 
-module.exports=router
+module.exports = router;
